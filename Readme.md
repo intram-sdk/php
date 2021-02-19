@@ -77,8 +77,8 @@ Le mode est `true` pour le mode test et `false` pour le mode live.
 
 
 
-##Configurez les informations de votre service / entreprise
-Vous pouvez configurer les informations de votre service / entreprise comme illustré ci-dessous. 
+## Configurez les informations de votre service / entreprise
+Vous pouvez configurer les informsetTemplateations de votre service / entreprise comme illustré ci-dessous. 
 Intram utilise ces paramètres afin de configurer les informations qui s'afficheront sur la page de paiement, 
 les factures PDF et les reçus imprimés.
 Vous pouvez inclure également ces informations au niveau du fichier de configuration globale.
@@ -157,7 +157,7 @@ différentes thème que vous pouvez utiliser consulter votre tableau de bord  cl
 \intram\PayCfa\PayCfa::setTemplate("default");
 
 ```
-#####Cas d'une installation via composer 
+##### Cas d'une installation via composer 
 ```php
 PayCfa::setTemplate("default");
 
@@ -257,7 +257,7 @@ $message = $response->message;
 $error = $response->error;
 ```
 
-###Obtenir le statut de la transaction
+### Obtenir le statut de la transaction
 Passer l'identifiant de la transaction comme argument à la fonction (obligatoire)
 
 ##### Cas d'une installation manuelle 
