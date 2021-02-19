@@ -263,17 +263,18 @@ Passer l'identifiant de la transaction comme argument à la fonction (obligatoir
 ##### Cas d'une installation manuelle 
 
 ```php
-\intram\PayCfa\PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11); 
+$response = json_decode(\intram\PayCfa\PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11)); 
 ```
 ##### Cas d'une installation via composer 
 
 Passer l'identifiant de la transaction comme
  argument à la fonction (obligatoire)
 ```php
-PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11); 
+$response = json_decode(PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11)); 
 ```
 
 ##### Réponse attendue
+Vous pouvez récupérer les informations en utilisant la procédure adoptée au niveau de la création de la transaction
 
 ```php
 
