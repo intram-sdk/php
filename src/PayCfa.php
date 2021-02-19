@@ -67,7 +67,7 @@ class PayCfa
     {
     }
 
-    public static function getTransactionStatus($transactionId)
+    public static function getTransactionVerify($transactionId)
     {
 
         $reponse = null;

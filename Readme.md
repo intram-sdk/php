@@ -257,19 +257,20 @@ $message = $response->message;
 $error = $response->error;
 ```
 
-### Obtenir le statut de la transaction
+### Vérifier les informations de la transaction
 Passer l'identifiant de la transaction comme argument à la fonction (obligatoire)
 
 ##### Cas d'une installation manuelle 
 
 ```php
-\intram\PayCfa\PayCfa::getTransactionStatus(5f2d7a96b97d9d3fea912c11); 
+\intram\PayCfa\PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11); 
 ```
 ##### Cas d'une installation via composer 
 
-Passer l'identifiant de la transaction comme argument à la fonction (obligatoire)
+Passer l'identifiant de la transaction comme
+ argument à la fonction (obligatoire)
 ```php
-PayCfa::getTransactionStatus(5f2d7a96b97d9d3fea912c11); 
+PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11); 
 ```
 
 ##### Réponse attendue
