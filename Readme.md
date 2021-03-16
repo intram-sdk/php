@@ -6,248 +6,167 @@ Bibliothèque [PHP](https://www.php.net) pour [INTRAM (intram.com)](https://intr
 Construit sur l'API HTTP INTRAM (bêta).
 
 ## Génération de vos clés API
-Les clés d'API sont vos références numériques auprès des systèmes d'Intram. 
-Nous les utilisons afin d'identifier vos différents comptes marchands.
- Ces clés sont nécessaires pour toute intégration des APIs de paiements Intram. 
- Voici chronologiquement la marche à suivre :
- * [Créez](https://account.intram.org/register) et 
- valider (en faisant la configuration dans vos paramètres [Paramètre](https://account.intram.org/settings)) 
- votre compte Intram si ce n'est pas encore fait;
- * Connectez-vous à votre compte et cliquez sur Développeurs, ensuite 
- [Api](https://account.intram.org/developers/api) 
- au niveau du menu à gauche;
- * Choisissez le mode qui vous convient au niveau du menu à gauche, par défaut vous êtes en mode `TEST`, vous pouvez passer en mode `LIVE` quand vous voulez;
- 
 
- 
-## Installation 
 
-##### Installation via composer
-Composer est un outil de gestion des dépendances en PHP.
- Il vous permet de déclarer les bibliothèques dont dépend votre 
- projet et il les gérera (installera / mettra à jour) pour vous.
- Dans notre cas, votre projet utilisera la bibliothèque d'Intram pour gérer
- les paiements, Intram est donc une dépendance de votre projet. Afin d'avoir plus
- de détail, vous pouvez consulter [le site officiel de composer](https://getcomposer.org/). 
+
+
+## Installation via composer
+
 ```sh
 composer require intram-sdk/php
 ```
 
-##### Installation manuelle
-[Cliquez ici](https://github.com/intram-sdk/php) pour télécharger la dernière version de notre client PHP. Ensuite décompressez le fichier puis copiez le contenu dans un emplacement du dossier contenant le code source de votre application.
-
-
 ## API configuration
-Dans votre espace de travail Intram, récupérez différentes clés API.
 
-##### Cas d'une installation manuelle
-###### Prérequis
-Vous pouvez créer un fichier de configuration globale contenant les paramètres ci-dessous et l'inclure par la suite dans chacun de vos fichiers nécessitant de faire appel à l'API. Pensez premièrement à inclure le client PHP de Intram au niveau du fichier de configuration globale.
-```sh
-require('chemin_vers_le_dossier_du_client_php_intram/PayCfa.php');
-```
-
-###### Configuration
-En utilisant vos différents clés obtenues sur votre tableau de board, initialiser Intram PayCfa.
-Le mode est `true` pour le mode test et `false` pour le mode live.
+Configurez les clés d'API intram.
 ```php
-\intram\PayCfa\PayCfa::setPublicKey("02ce7648a3688f1077b8d4a9607c9f3a2bc169d3f490e7815ce9121f19cef98a");
-\intram\PayCfa\PayCfa::setPrivateKey("tpk_6b0a542e36fdbdce9024412e5d75943136ee25edcaaa2abc3fac0d589cea53ca");
-\intram\PayCfa\PayCfa::setSecretKey("tsk_266e9e7946e9be2becfc8f727312fadb0fcfba89a6fe7e3a1ef0571836549bea");
-\intram\PayCfa\PayCfa::setMarchandKey("601bbe97cc481829fa1237fd");
-\intram\PayCfa\PayCfa::setSandbox(true);
+$paycfa = new \intram\PayCfa\PayCfa(
+            "5b06f06a0aad7d0163c414926b635ee9cdf41438de0f09d70a4acf153083b7ed375a691e3513b42544530469e1ff8657b34508dc61927048444dd6dc9ccbb87f",
+            "pk_9c0410014969f276e8b3685fec7b1b2ab41fc760db2976c75e32ec0fdc3b7d5575a7087f9aeb4d8a29a949ac4cac11363b39ff6a6d9dc3bc6ce0f328c62c3c58",
+            "sk_08bd75f9468b484d8a9f24daddff4638d6513fdcf3ff4dd533e72ce55c22eac3207c12af49400ecddb1969ad3db152b0c338c0050c4540f9d0cb8c3cd3cb8c26",
+            "marchand_id",
+            true)
 ```
+Connectez-vous à votre compte Intram, cliquez sur Développeur, puis sur API à ce niveau, récupérez les clés API et donnez-les comme arguments au contrôleur.
+Initialisez Intram PayCfa en entrant dans l'ordre: `PUBLIC_KEY`,` PRIVATE_KEY`, `INTRAM_SECRET`,` INTRAM_MARCHAND_KEY`, `MODE`
+Le mode: `true` pour le mode live et` false` pour le mode test.
 
-##### Cas d'une installation via composer
-###### Prérequis
-Il vous suffit d'inclure le fichier vendor/autoload.php
- ```sh
-require('vendor/autoload.php');
-```
-###### Configuration
-En utilisant vos différents clés obtenues sur votre tableau de board, initialiser Intram PayCfa.
-Le mode est `true` pour le mode test et `false` pour le mode live.
+
+##Configurez les informations de votre service / entreprise
+
+
+
+###### Définition du nom de la boutique
+(requis)
 ```php
- PayCfa::setPublicKey("02ce7648a3688f1077b8d4a9607c9f3a2bc169d3f490e7815ce9121f19cef98a");
- PayCfa::setPrivateKey("tpk_6b0a542e36fdbdce9024412e5d75943136ee25edcaaa2abc3fac0d589cea53ca");
- PayCfa::setSecret("tsk_266e9e7946e9be2becfc8f727312fadb0fcfba89a6fe7e3a1ef0571836549bea");
- PayCfa::setMarchandId("601bbe97cc481829fa1237fd");
- PayCfa::setSandbox(true);
+$paycfa->setNameStore("Suntech Store"); 
 ```
 
 
 
-## Configurez les informations de votre service / entreprise
-Vous pouvez configurer les informations de votre service / entreprise comme illustré ci-dessous. 
-Intram utilise ces paramètres afin de configurer les informations qui s'afficheront sur la page de paiement, 
-les factures PDF et les reçus imprimés.
-Vous pouvez inclure également ces informations au niveau du fichier de configuration globale.
+###### Définition de l'URL du logo de la boutique
 
-##### Cas d'une installation manuelle
 ```php
-\intram\PayCfa\PayCfa::setNameStore("JShop"); //nom de la boutique
-\intram\PayCfa\PayCfa::setPostalAdressStore("BP 35"); // l'adresse postale 
-\intram\PayCfa\PayCfa::setLogoUrlStore("https://jshop.com/logo.png"); //l'URL du logo de la boutique
-\intram\PayCfa\PayCfa::setWebSiteUrlStore("https://jshop.com"); //site Web de la boutique
-\intram\PayCfa\PayCfa::setPhoneStore("97000000");  // numéro de téléphone 
+$paycfa->setLogoUrlStore("https://www.suntechshop/logo.png");
 ```
 
-##### Cas d'une installation via composer
+
+
+###### Configuration du site Web de la boutique
+
 ```php
-PayCfa::setNameStore("JShop");  //nom de la boutique (obligatoire)
-PayCfa::setPostalAdressStore("BP 35"); // l'adresse postale 
-PayCfa::setLogoUrlStore("https://jshop.com/logo.png"); //l'URL du logo de la boutique
-PayCfa::setWebSiteUrlStore("https://jshop.com"); //site Web de la boutique
-PayCfa::setPhoneStore("97000000"); // numéro de téléphone 
+$paycfa->setWebSiteUrlStore("https://www.suntechshop");
+```
+
+
+
+###### Configuration du numéro de téléphone 
+
+```php
+$paycfa->setPhoneStore("97000000");
+```
+
+
+
+###### Configuration de l'adresse postale 
+
+```php
+$paycfa->setPostalAdressStore("BP 35");
 ```
 
 ##Créer une transaction de paiement
-Afin de permettre à l'utilisateur d'effectuer un paiement sur votre boutique, 
-vous devez créer la transaction puis retourner l'url de paiement ou le code qr à scanner.
-Pour cela :
+Afin de permettre à l'utilisateur d'effectuer un paiement sur votre boutique, vous devez créer la transaction puis lui envoyer l'url de paiement ou le code qr à scanner.
+Pour ça :
+
+###### Add Invoice Items
 Ajouter les différents produits de l'achat (obligatoire)
-##### Cas d'une installation manuelle
 ```php
-\intram\PayCfa\PayCfa::setItems([
-            ['name'=>"T-shirt",'qte'=>"2",'price'=>"500",'totalamount'=>"1000"],
-            ['name'=>"trouser",'qte'=>"1",'price'=>"12500",'totalamount'=>"12500"],
-        ]);
-```
-##### Cas d'une installation via composer 
-```php
-PayCfa::setItems([
+$paycfa->setItems([
             ['name'=>"T-shirt",'qte'=>"2",'price'=>"500",'totalamount'=>"1000"],
             ['name'=>"trouser",'qte'=>"1",'price'=>"12500",'totalamount'=>"12500"],
         ]);
 ```
 
-Définir le montant total de la transaction
-##### Cas d'une installation manuelle
-
+###### Configuration du montant de la TVA
+TVA (optionnel)
 ```php
-\intram\PayCfa\PayCfa::setAmount(13600);
-```
-##### Cas d'une installation via composer 
-
-```php
-PayCfa::setAmount(13600);
-```
-
-Définir la devise de paiement (obligatoire). Pour en savoir plus sur les différentes
-devises intégrées par intram, vueillez consulter
- [la documentation](https://developer.intram.org/).
-##### Cas d'une installation manuelle
-```php
-\intram\PayCfa\PayCfa::setCurrency("XOF");
-```
-##### Cas d'une installation via composer 
-```php
-PayCfa::setCurrency("XOF");
-```
-
-Définir le thème à utiliser sur votre portail de paiement  (obligatoire), pour avoir accès aux
-différentes thème que vous pouvez utiliser consulter votre tableau de bord  cliquez sur
- Développeurs, ensuite  [Api](https://account.intram.org/developers/api) puis Template.
- Ajouter des templates gratuits et / ou payants à votre compte. A partir de ce moment,
- vous pouvez utiliser le code ce template dans la méthode ci-dessous. Au cas où vous voulez utiliser le
- thème par défaut d'intram, veuillez utiliser la valeur `default`. 
-
-##### Cas d'une installation manuelle                                                            
-```php
-\intram\PayCfa\PayCfa::setTemplate("default");
-
-```
-##### Cas d'une installation via composer 
-```php
-PayCfa::setTemplate("default");
-
+payfa->setTva([["name" => "VAT (18%)", "amount" => 1000],["name" => " other VAT", "amount" => 500]]);
 ```
 
 
-Ajouter une description de l'opération (obligatoire)
-##### Cas d'une installation manuelle 
-```php
-\intram\PayCfa\PayCfa::setDescription("Pretty and suitable for your waterfall");
-```
-##### Cas d'une installation via composer 
-```php
-PayCfa::setDescription("Pretty and suitable for your waterfall");
-```
-
-Appliquer une TVA (optionnel)
-##### Cas d'une installation manuelle 
-```php
-\intram\PayCfa\PayCfa::setTva([["name" => "VAT (18%)", "amount" => 1000],["name" => " other VAT", "amount" => 500]]);
-```
-##### Cas d'une installation via composer  
-```php
-PayCfa::setTva([["name" => "VAT (18%)", "amount" => 1000],["name" => " other VAT", "amount" => 500]]);
-```
-
-
-Ajouter de données personnalisées (optionnel)
-##### Cas d'une installation manuelle 
-```php
-\intram\PayCfa\PayCfa::setCustomData([['CartID',"32393"],['PERIOD',"TABASKI"]]);
-```
-##### Cas d'une installation via composer 
-```php
-PayCfa::setCustomData([['CartID',"32393"],['PERIOD',"TABASKI"]]);
-```
-Définir l'URL de redirection de la boutique après paiement(optionnel)
-##### Cas d'une installation manuelle 
-```php
-\intram\PayCfa\PayCfa::setRedirectionUrl("https://jshop.com/redirection-url");
-```
-##### Cas d'une installation via composer 
-```php
-PayCfa::setRedirectionUrl("https://jshop.com/redirection-url");
-```
-Définir l'URL de retour de votre site
-(optionnel)
-##### Cas d'une installation manuelle 
-```php
-\intram\PayCfa\PayCfa::setReturnUrl("https://jshop.com/return-url");
-```
-
-##### Cas d'une installation via composer 
-```php
-PayCfa::setReturnUrl("https://jshop.com/return-url");
-```
-Définir l'URL d'annulation de votre site
+###### Ajout de données personnalisées
 (optionnel)
 ```php
-\intram\PayCfa\PayCfa::setCancelUrl("https://jshop.com/cancel-url");
+$paycfa->setCustomData([['CartID',"32393"],['PERIOD',"TABASKI"]]);
 ```
-Créer enfin la transaction pour permettre le paiement à l'utilisateur
+
+
+
+###### Définition du montant total
+Total de la commande (obligatoire)
+```php
+$paycfa->setAmount(13600);
+```
+###### Définition de la devise 
+Devise de paiement (obligatoire)
+```php
+$paycfa->setCurrency("XOF");
+```
+
+######  Description 
+Description de l'opération (obligatoire)
+```php
+$paycfa->setDescription("Pretty and suitable for your waterfall");
+```
+
+
+###### Template a utilisé sur le portail de paiement
+ (obligatoire)
+```php
+$paycfa->setTemplate("default");
+```
+
+
+###### Définition de l'URL de redirection de la boutique
+(optionnel)
+```php
+$paycfa->setRedirectionUrl("https://www.suntechshop/redirection-url");
+```
+
+
+###### Définition de l'URL de retour du magasin
+(optionnel)
+```php
+$paycfa->setReturnUrl("https://www.suntechshop/return-url");
+```
+
+
+###### Définition de l'URL d'annulation du magasin
+(optionnel)
+```php
+$paycfa->setCancelUrl("https://www.suntechshop/cancel-url");
+```
+
+
+###### Faire la demande de paiement
 (obligatoire)
-##### Cas d'une installation manuelle 
 ```php
-$response = json_decode(\intram\PayCfa\PayCfa::setRequestPayment());
+$response = json_decode($paycfa->setRequestPayment());
 ```
+###### Réponse attendue
 
-##### Cas d'une installation via composer 
 ```php
-$response = json_decode(PayCfa::setRequestPayment());
-```
-
-
-##### Réponse attendue
-
-```json
-
 {
-  "status":"PENDING",
-  "transaction_id":"602fd5463f1edd6264e4107c",
-  "receipt_url":"https://account.intram.org/payment/gate/602fd5463f1edd6264e4107c",
-  "total_amount":1000,
-  "message":"Transaction created successfully",
-  "error":false
+              "status": "PENDING",
+              "transaction_id": "5f2d7a96b97d9d3fea912c11",
+              "receipt_url": "localhost:3000/payment/gate/5f2d7a96b97d9d3fea912c11",
+              "total_amount": 1000,
+              "message": "Transaction created successfully",
+              "error": false
 }
-
 ```
 
-##### Récupération des données
+###### Récupération des données
 ```php
 $transaction_id = $response->transaction_id;
 $status = $response->status;
@@ -257,27 +176,16 @@ $message = $response->message;
 $error = $response->error;
 ```
 
-### Vérifier les informations de la transaction
+##Obtenir le statut de la transaction
+
 Passer l'identifiant de la transaction comme argument à la fonction (obligatoire)
-
-##### Cas d'une installation manuelle 
-
 ```php
-$response = json_decode(\intram\PayCfa\PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11)); 
-```
-##### Cas d'une installation via composer 
-
-Passer l'identifiant de la transaction comme
- argument à la fonction (obligatoire)
-```php
-$response = json_decode(PayCfa::getTransactionVerify(5f2d7a96b97d9d3fea912c11)); 
+$paycfa->getTransactionStatus(5f2d7a96b97d9d3fea912c11); 
 ```
 
-##### Réponse attendue
-Vous pouvez récupérer les informations en utilisant la procédure adoptée au niveau de la création de la transaction
+###### Réponse attendue
 
 ```php
-
 {
   "error":false,
   "status":"PENDING",
@@ -379,8 +287,12 @@ Vous pouvez récupérer les informations en utilisant la procédure adoptée au 
   },
   "message":"statut de la transaction"
 }
-
 ```
+
+
+
+# Running Tests
+To run tests just setup the API configuration environment variables. An internet connection is required for some of the tests to pass.
 
 ## License
 MIT

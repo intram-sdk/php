@@ -12,48 +12,48 @@ namespace intram\PayCfa;
 class PayCfa
 {
     // Public Api key
-    private static $public_key;
+    private $public_key;
 
     // Account Private Key
-    private static $private_key;
+    private $private_key;
 
     // Account Secret
-    private static $secret_key;
+    private $secret;
 
     // Account Marchand
-    private static $marchand_key;
+    private $marchand_id;
 
 
-    private static $sandbox;
+    private $sandbox;
 
-    private static $curl;
+    private $curl;
 
-    private static $const;
+    private $const;
 
-    private static $redirectionUrl;
-    private static $items;
-    private static $amount;
-    private static $devise;
-    private static $cancelUrl;
-    private static $returnUrl;
-    private static $generateUrl;
-    private static $tva;
-    private static $description;
-    private static $nameStore;
-    private static $postalAdressStore;
-    private static $phoneStore;
-    private static $logoUrlStore;
-    private static $webSiteUrlStore;
-    private static $header;
-    private static $keys;
-    private static $currency;
-    private static $template;
-    private static $customData;
+    private $redirectionUrl;
+    private $items;
+    private $amount;
+    private $devise;
+    private $cancelUrl;
+    private $returnUrl;
+    private $generateUrl;
+    private $tva;
+    private $description;
+    private $nameStore;
+    private $postalAdressStore;
+    private $phoneStore;
+    private $logoUrlStore;
+    private $webSiteUrlStore;
+    private $header;
+    private $keys;
+    private $currency;
+    private $template;
+    private $customData;
 
-    private static $BASE_URL = "https://webservices.intram.org:4002/api/v1/";
-    private static $BASE_URLSANBOX = "https://webservices.intram.org:4002/api/v1/";
-    private static $verify_URL = "transactions/confirm/";
-    private static $Payout_URL = "payments/request";
+    private $BASE_URL = "https://webservices.intram.org:4002/api/v1/";
+    private $BASE_URLSANBOX = "https://webservices.intram.org:4002/api/v1/";
+    private $verify_URL = "transactions/confirm/";
+    private $setPayout_URL = "payments/request";
 
 
     /**
@@ -63,24 +63,62 @@ class PayCfa
      * @param $secret
      * @param $sandbox
      */
-    public function __construct()
+    public function __construct($public_key, $private_key, $secret, $marchand_id, $sandbox=false)
     {
+        $this->public_key = $public_key;
+        $this->private_key = $private_key;
+        $this->secret = $secret;
+        $this->const = !$sandbox?$this->BASE_URL:$this->BASE_URLSANBOX;
+        $this->sandbox = $sandbox ? "sandbox" : "live";
+        $this->curl = new \GuzzleHttp\Client();
+        $this->marchand_id = $marchand_id;
+
+        $this->redirectionUrl = null;
+        $this->items = [];
+        $this->amount = 0;
+        $this->devise = null;
+        $this->cancelUrl = null;
+        $this->returnUrl = null;
+        $this->generateUrl = null;
+        $this->tva = [];
+        $this->description = null;
+        $this->nameStore = null;
+        $this->phoneStore = null;
+        $this->logoUrlStore = null;
+        $this->webSiteUrlStore = null;
+
+        $this->header = [
+            "X-API-KEY:" . $this->public_key,
+            "X-PRIVATE-KEY: " . $this->private_key,
+            "X-SECRET-KEY:" . $this->secret,
+            "X-MARCHAND-KEY: " . $this->marchand_id,
+            'Content-Type: Application/json'
+        ];
+
+        $this->keys = [
+            'public' => $this->public_key,
+            'private' => $this->private_key,
+            'secret' => $this->secret
+        ];
+
+
     }
 
-    public static function getTransactionVerify($transactionId)
+    public function getTransactionStatus($transactionId)
     {
 
         $reponse = null;
 
         if (
             !isset($transactionId) ||
-            self::getPrivateKey() == null ||
-            self::getPublicKey() == null ||
-            self::getSecretKey() == null
-        ) {
+            !isset($this->private_key) ||
+            !isset($this->public_key) ||
+            !isset($this->secret)
+        )
+        {
             $response = json_encode(array(
                 "error" => true,
-                "message" => "Rassurez-vous de passer les arguments
+                "message"=>"Rassurez vous de passer les arguments
                 suivants : 'transactionId','public_key',
                 'private_key','secret'"));;
             return $response;
@@ -88,19 +126,14 @@ class PayCfa
 
 
         try {
+
             $curl = curl_init();
 
             curl_setopt_array($curl, array(
-                CURLOPT_URL => self::getConst() . self::getVerifyURL() . "" . $transactionId,
+                CURLOPT_URL => $this->const . $this->verify_URL."".$transactionId,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_CUSTOMREQUEST => "GET",
-                CURLOPT_HTTPHEADER => [
-                    "X-API-KEY:" . self::getPublicKey(),
-                    "X-PRIVATE-KEY: " . self::getPrivateKey(),
-                    "X-SECRET-KEY:" . self::getSecretKey(),
-                    "X-MARCHAND-KEY: " . self::getMarchandKey(),
-                    'Content-Type: Application/json'
-                ]
+                CURLOPT_HTTPHEADER => $this->header
             ));
 
             $response = curl_exec($curl);
@@ -110,7 +143,7 @@ class PayCfa
 
 
             if ($err) {
-                $response = json_encode(array("error" => true, "message" => $err));;
+                $response = json_encode(array("error" => true,"message"=>$err));;
             }
 
         } catch (\Exception $e) {
@@ -121,24 +154,25 @@ class PayCfa
     }
 
 
-    public static function setRequestPayment()
+    public function setRequestPayment()
     {
-
         $reponse = null;
 
+
         if (
-            self::getCurrency() == null ||
-            self::getItems() == null ||
-            self::getAmount() == null ||
-            self::getNameStore() == null ||
-            self::getTemplate() == null ||
-            self::getPrivateKey() == null ||
-            self::getPublicKey() == null ||
-            self::getSecretKey() == null
-        ) {
+            !isset($this->currency) ||
+            !isset($this->items) ||
+            !isset($this->amount) ||
+            !isset($this->nameStore) ||
+            !isset($this->template) ||
+            !isset($this->private_key) ||
+            !isset($this->public_key) ||
+            !isset($this->secret)
+        )
+        {
             $response = json_encode(array(
                 "error" => true,
-                "message" => "Rassurez vous de passer les arguments suivants : 'currency','items','amount','nameStore', 'template','public key', 'private key','secret key'"));;
+                "message"=>"Rassurez vous de passer les arguments suivants : 'currency','items','amount','nameStore', 'template','public_key', 'private_key','secret'"));;
             return $response;
         }
 
@@ -149,48 +183,38 @@ class PayCfa
             $actions = null;
             $store = null;
             $invoice = [
-                "keys" => [
-                    'public' => self::getPublicKey(),
-                    'private' => self::getPrivateKey(),
-                    'secret' => self::getSecretKey(),
-                ],
-                "currency" => self::getCurrency(),
-                "items" => self::getItems(),
-                "taxes" => self::getTva(),
-                "amount" => self::getAmount(),
-                "description" => self::getDescription(),
-                "custom_datas" => self::getCustomData()
+                "keys" => $this->keys,
+                "currency" => $this->getCurrency(),
+                "items" => $this->getItems(),
+                "taxes" => $this->getTva(),
+                "amount" => $this->getAmount(),
+                "description" => $this->getDescription(),
+                "custom_datas"=>$this->getCustomData()
             ];
             $actions = [
-                "cancel_url" => self::getCancelUrl(),
-                "return_url" => self::getReturnUrl(),
-                "callback_url" => self::getRedirectionUrl()
+                "cancel_url" => $this->getCancelUrl(),
+                "return_url" => $this->getReturnUrl(),
+                "callback_url" => $this->getRedirectionUrl()
             ];
 
             $store = [
-                "name" => self::getNameStore(),
-                "postal_adress" => self::getPostalAdressStore(),
-                "logo_url" => self::getLogoUrlStore(),
-                "web_site_url" => self::getWebSiteUrlStore(),
-                "phone" => self::getPhoneStore(),
-                "template" => self::getTemplate()
+                "name" => $this->getNameStore(),
+                "postal_adress" => $this->getPostalAdressStore(),
+                "logo_url" => $this->getLogoUrlStore(),
+                "web_site_url" => $this->getWebSiteUrlStore(),
+                "phone" => $this->getPhoneStore(),
+                "template" => $this->getTemplate()
             ];
 
 
             $curl = curl_init();
 
             curl_setopt_array($curl, array(
-                CURLOPT_URL => self::getConst() . self::getPayoutURL(),
+                CURLOPT_URL => $this->const . $this->setPayout_URL,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_CUSTOMREQUEST => "POST",
-                CURLOPT_POSTFIELDS => json_encode(["invoice" => $invoice, "store" => $store, "actions" => $actions]),
-                CURLOPT_HTTPHEADER => [
-                    "X-API-KEY:" . self::getPublicKey(),
-                    "X-PRIVATE-KEY: " . self::getPrivateKey(),
-                    "X-SECRET-KEY:" . self::getSecretKey(),
-                    "X-MARCHAND-KEY: " . self::getMarchandKey(),
-                    'Content-Type: Application/json'
-                ]
+                CURLOPT_POSTFIELDS => json_encode(["invoice" => $invoice,"store"=>$store,"actions"=>$actions]),
+                CURLOPT_HTTPHEADER => $this->header
             ));
 
             $response = curl_exec($curl);
@@ -199,11 +223,11 @@ class PayCfa
             curl_close($curl);
 
             if ($err) {
-                $response = json_encode(array("error" => true, "message" => $err));;
+                $response = json_encode(array("error" => true,"message"=>$err));;
             }
 
         } catch (\Exception $e) {
-            $response = json_encode(array("error" => true, "message" => $e->getMessage()));
+            $response = json_encode(array("error" => true));
         }
         return $response;
     }
@@ -212,454 +236,385 @@ class PayCfa
     /**
      * @return mixed
      */
-    public static function getCurrency()
+    public function getCurrency()
     {
-        return self::$currency;
+        return $this->currency;
     }
 
     /**
      * @param mixed $currency
      */
-    public static function setCurrency($currency)
+    public function setCurrency($currency)
     {
-        self::$currency = $currency;
+        $this->currency = $currency;
     }
+
+
+
 
 
     /**
      * @return null
      */
-    public static function getDescription()
+    public function getDescription()
     {
-        return self::$description;
+        return $this->description;
     }
 
     /**
      * @param null $description
      */
-    public static function setDescription($description)
+    public function setDescription($description)
     {
-        self::$description = $description;
+        $this->description = $description;
     }
 
 
     /**
      * @return mixed
      */
-    public static function getPublicKey()
+    public function getPublicKey()
     {
-        return self::$public_key;
+        return $this->public_key;
     }
 
     /**
      * @param mixed $public_key
      */
-    public static function setPublicKey($public_key)
+    public function setPublicKey($public_key)
     {
-        self::$public_key = $public_key;
+        $this->public_key = $public_key;
     }
 
     /**
      * @return mixed
      */
-    public static function getPrivateKey()
+    public function getPrivateKey()
     {
-        return self::$private_key;
+        return $this->private_key;
     }
 
     /**
      * @param mixed $private_key
      */
-    public static function setPrivateKey($private_key)
+    public function setPrivateKey($private_key)
     {
-        self::$private_key = $private_key;
+        $this->private_key = $private_key;
     }
 
     /**
      * @return mixed
      */
-    public static function getSecretKey()
+    public function getSecret()
     {
-        return self::$secret_key;
+        return $this->secret;
     }
 
     /**
      * @param mixed $secret
      */
-    public static function setSecretKey($secret)
+    public function setSecret($secret)
     {
-        self::$secret_key = $secret;
+        $this->secret = $secret;
     }
 
     /**
      * @return mixed
      */
-    public static function getSandbox()
+    public function getSandbox()
     {
-
-        return self::$sandbox;
+        return $this->sandbox;
     }
 
     /**
      * @param mixed $sandbox
      */
-    public static function setSandbox($sandbox)
+    public function setSandbox($sandbox)
     {
-        self::$sandbox = $sandbox;
+        $this->sandbox = $sandbox;
     }
 
     /**
      * @return \GuzzleHttp\Client
      */
-    public static function getCurl()
+    public function getCurl()
     {
-        return self::$curl;
+        return $this->curl;
     }
 
     /**
      * @param \GuzzleHttp\Client $curl
      */
-    public static function setCurl($curl)
+    public function setCurl($curl)
     {
-        self::$curl = $curl;
+        $this->curl = $curl;
     }
 
     /**
      * @return string
      */
-    public static function getConst()
+    public function getConst()
     {
-        return !self::getSandbox() ? self::getBASEURL() : self::getBASEURLSANBOX();
+        return $this->const;
     }
 
     /**
      * @param string $const
      */
-    public static function setConst($const)
+    public function setConst($const)
     {
-        self::$const = $const;
+        $this->const = $const;
     }
 
     /**
      * @return mixed
      */
-    public static function getRedirectionUrl()
+    public function getRedirectionUrl()
     {
-        return self::$redirectionUrl;
+        return $this->redirectionUrl;
     }
 
     /**
      * @param mixed $redirectionUrl
      */
-    public static function setRedirectionUrl($redirectionUrl)
+    public function setRedirectionUrl($redirectionUrl)
     {
-        self::$redirectionUrl = $redirectionUrl;
+        $this->redirectionUrl = $redirectionUrl;
     }
 
     /**
      * @return mixed
      */
-    public static function getItems()
+    public function getItems()
     {
-        return self::$items;
+        return $this->items;
     }
 
     /**
      * @param mixed $items
      */
-    public static function setItems($items)
+    public function setItems($items)
     {
-        self::$items = $items;
+        $this->items = $items;
     }
 
     /**
      * @return mixed
      */
-    public static function getAmount()
+    public function getAmount()
     {
-        return self::$amount;
+        return $this->amount;
     }
 
     /**
      * @param mixed $amount
      */
-    public static function setAmount($amount)
+    public function setAmount($amount)
     {
-        self::$amount = $amount;
+        $this->amount = $amount;
     }
 
     /**
      * @return mixed
      */
-    public static function getDevise()
+    public function getDevise()
     {
-        return self::$devise;
+        return $this->devise;
     }
 
     /**
      * @param mixed $devise
      */
-    public static function setDevise($devise)
+    public function setDevise($devise)
     {
-        self::$devise = $devise;
+        $this->devise = $devise;
     }
 
     /**
      * @return mixed
      */
-    public static function getCancelUrl()
+    public function getCancelUrl()
     {
-        return self::$cancelUrl;
+        return $this->cancelUrl;
     }
 
     /**
      * @param mixed $cancelUrl
      */
-    public static function setCancelUrl($cancelUrl)
+    public function setCancelUrl($cancelUrl)
     {
-        self::$cancelUrl = $cancelUrl;
+        $this->cancelUrl = $cancelUrl;
     }
 
     /**
      * @return mixed
      */
-    public static function getReturnUrl()
+    public function getReturnUrl()
     {
-        return self::$returnUrl;
+        return $this->returnUrl;
     }
 
     /**
      * @param mixed $returnUrl
      */
-    public static function setReturnUrl($returnUrl)
+    public function setReturnUrl($returnUrl)
     {
-        self::$returnUrl = $returnUrl;
+        $this->returnUrl = $returnUrl;
     }
 
     /**
      * @return mixed
      */
-    public static function getGenerateUrl()
+    public function getGenerateUrl()
     {
-        return self::$generateUrl;
+        return $this->generateUrl;
     }
 
     /**
      * @param mixed $generateUrl
      */
-    public static function setGenerateUrl($generateUrl)
+    public function setGenerateUrl($generateUrl)
     {
-        self::$generateUrl = $generateUrl;
+        $this->generateUrl = $generateUrl;
     }
 
     /**
      * @return null
      */
-    public static function getNameStore()
+    public function getNameStore()
     {
-        return self::$nameStore;
+        return $this->nameStore;
     }
 
     /**
      * @param null $nameStore
      */
-    public static function setNameStore($nameStore)
+    public function setNameStore($nameStore)
     {
-        self::$nameStore = $nameStore;
+        $this->nameStore = $nameStore;
     }
 
     /**
      * @return mixed
      */
-    public static function getPostalAdressStore()
+    public function getPostalAdressStore()
     {
-        return self::$postalAdressStore;
+        return $this->postalAdressStore;
     }
 
     /**
      * @param mixed $postalAdressStore
      */
-    public static function setPostalAdressStore($postalAdressStore)
+    public function setPostalAdressStore($postalAdressStore)
     {
-        self::$postalAdressStore = $postalAdressStore;
+        $this->postalAdressStore = $postalAdressStore;
     }
 
     /**
      * @return null
      */
-    public static function getPhoneStore()
+    public function getPhoneStore()
     {
-        return self::$phoneStore;
+        return $this->phoneStore;
     }
 
     /**
      * @param null $phoneStore
      */
-    public static function setPhoneStore($phoneStore)
+    public function setPhoneStore($phoneStore)
     {
-        self::$phoneStore = $phoneStore;
+        $this->phoneStore = $phoneStore;
     }
 
     /**
      * @return null
      */
-    public static function getLogoUrlStore()
+    public function getLogoUrlStore()
     {
-        return self::$logoUrlStore;
+        return $this->logoUrlStore;
     }
 
     /**
      * @param null $logoUrlStore
      */
-    public static function setLogoUrlStore($logoUrlStore)
+    public function setLogoUrlStore($logoUrlStore)
     {
-        self::$logoUrlStore = $logoUrlStore;
+        $this->logoUrlStore = $logoUrlStore;
     }
 
     /**
      * @return null
      */
-    public static function getWebSiteUrlStore()
+    public function getWebSiteUrlStore()
     {
-        return self::$webSiteUrlStore;
+        return $this->webSiteUrlStore;
     }
 
     /**
      * @param null $webSiteUrlStore
      */
-    public static function setWebSiteUrlStore($webSiteUrlStore)
+    public function setWebSiteUrlStore($webSiteUrlStore)
     {
-        self::$webSiteUrlStore = $webSiteUrlStore;
+        $this->webSiteUrlStore = $webSiteUrlStore;
     }
 
     /**
      * @return mixed
      */
-    public static function getTemplate()
+    public function getTemplate()
     {
-        return self::$template;
+        return $this->template;
     }
 
     /**
      * @param mixed $template
      */
-    public static function setTemplate($template)
+    public function setTemplate($template)
     {
-        self::$template = $template;
+        $this->template = $template;
     }
 
     /**
      * @return mixed
      */
-    public static function getCustomData()
+    public function getCustomData()
     {
-        return self::$customData;
+        return $this->customData;
     }
 
     /**
      * @param mixed $customData
      */
-    public static function setCustomData($customData)
+    public function setCustomData($customData)
     {
-        self::$customData = $customData;
+        $this->customData = $customData;
     }
 
     /**
      * @return array
      */
-    public static function getTva()
+    public function getTva()
     {
-        return self::$tva;
+        return $this->tva;
     }
 
     /**
      * @param array $tva
      */
-    public static function setTva($tva)
+    public function setTva($tva)
     {
-        self::$tva = $tva;
+        $this->tva = $tva;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public static function getMarchandKey()
-    {
-        return self::$marchand_key;
-    }
-
-    /**
-     * @param mixed $marchand_id
-     */
-    public static function setMarchandKey($marchand_key): void
-    {
-        self::$marchand_key = $marchand_key;
-    }
 
 
-    /**
-     * @return string
-     */
-    public static function getBASEURL(): string
-    {
-        return self::$BASE_URL;
-    }
 
-    /**
-     * @param string $BASE_URL
-     */
-    public static function setBASEURL(string $BASE_URL): void
-    {
-        self::$BASE_URL = $BASE_URL;
-    }
 
-    /**
-     * @return string
-     */
-    public static function getBASEURLSANBOX(): string
-    {
-        return self::$BASE_URLSANBOX;
-    }
 
-    /**
-     * @param string $BASE_URLSANBOX
-     */
-    public static function setBASEURLSANBOX(string $BASE_URLSANBOX): void
-    {
-        self::$BASE_URLSANBOX = $BASE_URLSANBOX;
-    }
 
-    /**
-     * @return string
-     */
-    public static function getVerifyURL(): string
-    {
-        return self::$verify_URL;
-    }
-
-    /**
-     * @param string $verify_URL
-     */
-    public static function setVerifyURL(string $verify_URL): void
-    {
-        self::$verify_URL = $verify_URL;
-    }
-
-    /**
-     * @return string
-     */
-    public static function getPayoutURL(): string
-    {
-        return self::$Payout_URL;
-    }
-
-    /**
-     * @param string $Payout_URL
-     */
-    public static function setPayoutURL(string $Payout_URL): void
-    {
-        self::$Payout_URL = $Payout_URL;
-    }
 
 
 }
